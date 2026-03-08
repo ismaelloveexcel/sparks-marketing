@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Next.js build
+        run: npm run build
+
+      - name: Lint (if script exists)
+        run: |
+          if node -e "const p = require('./package.json'); process.exit(p.scripts && p.scripts.lint ? 0 : 1);" 2>/dev/null; then
+            npm run lint
+          else
+            echo "No lint script found — skipping."
+          fi
+
+      - name: Type-check (if script exists)
+        run: |
+          if node -e "const p = require('./package.json'); process.exit(p.scripts && p.scripts.typecheck ? 0 : 1);" 2>/dev/null; then
+            npm run typecheck
+          else
+            echo "No typecheck script found — skipping."
+          fi
